@@ -67,7 +67,4 @@ class PyTorchModel(kfserving.KFModel):
             except Exception as e:
                 raise TypeError(
                     "Failed to initialize Torch Tensor from inputs: %s, %s" % (e, inputs))
-            try:
-                return {"predictions":  self.model(inputs).tolist()}
-            except Exception as e:
-                raise Exception("Failed to predict %s" % e)
+            return {"predictions":  self.model(inputs).tolist()}

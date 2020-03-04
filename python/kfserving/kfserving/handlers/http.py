@@ -1,6 +1,6 @@
 import tornado.web
 import json
-from typing import Dict
+from typing import Dict, Any
 from http import HTTPStatus
 from kfserving.kfmodel import KFModel
 
@@ -28,6 +28,12 @@ class HTTPHandler(tornado.web.RequestHandler):
             )
         return request
 
+    def write_error(self, status_code: int, **kwargs: Any) -> None:
+        self.set_header("Content-Type", "application/json")
+        self.finish(
+            {"error": self._reason}
+        )
+
 
 class PredictHandler(HTTPHandler):
     def post(self, name: str):
@@ -41,7 +47,21 @@ class PredictHandler(HTTPHandler):
             )
         request = model.preprocess(body)
         request = self.validate(request)
-        response = model.predict(request)
+        try:
+            response = model.predict(request)
+        except ValueError as e:
+            raise tornado.web.HTTPError(
+                status_code=HTTPStatus.BAD_REQUEST,
+                reason="Wrong input provided: %s" % e,
+                log_message=str(e)
+            )
+        except Exception:
+            raise tornado.web.HTTPError(
+                status_code=HTTPStatus.BAD_REQUEST,
+                reason="Something went wrong, probably due to bad input.",
+                log_message=str(e)
+            )
+
         response = model.postprocess(response)
         self.write(response)
 
