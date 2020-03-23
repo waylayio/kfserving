@@ -17,7 +17,7 @@ import argparse
 
 from xgbserver import XGBoostModel
 
-DEFAULT_MODEL_NAME = "default"
+DEFAULT_MODEL_NAME = "model"
 DEFAULT_LOCAL_MODEL_DIR = "/tmp/model"
 DEFAULT_NTHREAD = 1
 

@@ -21,7 +21,12 @@ class HTTPHandler(tornado.web.RequestHandler):
         return model
 
     def validate(self, request):
-        if "instances" in request and not isinstance(request["instances"], list):
+        if "instances" not in request:
+            raise tornado.web.HTTPError(
+                status_code=HTTPStatus.BAD_REQUEST,
+                reason="Expected key \"instances\" in request body"
+            )
+        if not isinstance(request["instances"], list):
             raise tornado.web.HTTPError(
                 status_code=HTTPStatus.BAD_REQUEST,
                 reason="Expected \"instances\" to be a list"
@@ -29,10 +34,10 @@ class HTTPHandler(tornado.web.RequestHandler):
         return request
 
     def write_error(self, status_code: int, **kwargs: Any) -> None:
-        self.set_header("Content-Type", "application/json")
-        self.finish(
-            {"error": self._reason}
-        )
+        self.set_status(400, "Something went wrong, probably cause by wrong input")
+        error_response = {"error": str(kwargs["exc_info"][1])}
+        self.write(error_response)
+        self.finish()
 
 
 class PredictHandler(HTTPHandler):
@@ -47,21 +52,7 @@ class PredictHandler(HTTPHandler):
             )
         request = model.preprocess(body)
         request = self.validate(request)
-        try:
-            response = model.predict(request)
-        except ValueError as e:
-            raise tornado.web.HTTPError(
-                status_code=HTTPStatus.BAD_REQUEST,
-                reason="Wrong input provided: %s" % e,
-                log_message=str(e)
-            )
-        except Exception:
-            raise tornado.web.HTTPError(
-                status_code=HTTPStatus.BAD_REQUEST,
-                reason="Something went wrong, probably due to bad input.",
-                log_message=str(e)
-            )
-
+        response = model.predict(request)
         response = model.postprocess(response)
         self.write(response)
 

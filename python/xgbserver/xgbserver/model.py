@@ -17,6 +17,7 @@ import xgboost as xgb
 from xgboost import XGBModel
 import os
 import numpy as np
+import pandas as pd
 from typing import List, Dict
 
 BOOSTER_FILE = "model.bst"
@@ -41,6 +42,11 @@ class XGBoostModel(kfserving.KFModel):
 
     def predict(self, request: Dict) -> Dict:
         # Use of list as input is deprecated see https://github.com/dmlc/xgboost/pull/3970
-        dmatrix = xgb.DMatrix(request["instances"], nthread=self.nthread)
+        if len(request["instances"]) == 0:
+            return { "predictions": [] }
+        if isinstance(request["instances"][0], list):
+            dmatrix = xgb.DMatrix(np.array(request["instances"]), nthread=self.nthread)
+        else:
+            dmatrix = xgb.DMatrix(pd.DataFrame.from_dict(request["instances"]), nthread=self.nthread)
         result: xgb.DMatrix = self._booster.predict(dmatrix)
         return { "predictions": result.tolist() }
