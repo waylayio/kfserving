@@ -17,6 +17,7 @@ import os
 from typing import Dict
 import torch
 import importlib
+import json
 import sys
 
 PYTORCH_FILE = "model.pt"
@@ -41,21 +42,22 @@ class PyTorchModel(kfserving.KFModel):
                 py_files.append(filename)
         if len(py_files) == 1:
             model_class_file = os.path.join(model_file_dir, py_files[0])
+            model_class_name = self.model_class_name
+
+            # Load the python class into memory
+            sys.path.append(os.path.dirname(model_class_file))
+            modulename = os.path.basename(model_class_file).split('.')[0].replace('-', '_')
+            model_class = getattr(importlib.import_module(modulename), model_class_name)
+
+            # Make sure the model weight is transform with the right device in this machine
+            self.model = model_class().to(self.device)
+            self.model.load_state_dict(torch.load(model_file, map_location=self.device))
         elif len(py_files) == 0:
-            raise Exception('Missing PyTorch Model Class File.')
+            self.model = torch.jit.load(model_file).to(self.device)
         else:
             raise Exception('More than one Python file is detected',
                             'Only one Python file is allowed within model_dir.')
-        model_class_name = self.model_class_name
 
-        # Load the python class into memory
-        sys.path.append(os.path.dirname(model_class_file))
-        modulename = os.path.basename(model_class_file).split('.')[0].replace('-', '_')
-        model_class = getattr(importlib.import_module(modulename), model_class_name)
-
-        # Make sure the model weight is transform with the right device in this machine
-        self.model = model_class().to(self.device)
-        self.model.load_state_dict(torch.load(model_file, map_location=self.device))
         self.model.eval()
         self.ready = True
 
@@ -67,4 +69,6 @@ class PyTorchModel(kfserving.KFModel):
             except Exception as e:
                 raise TypeError(
                     "Failed to initialize Torch Tensor from inputs: %s, %s" % (e, inputs))
-            return {"predictions":  self.model(inputs).tolist()}
+
+            predictions = self.model(inputs)
+            return {"predictions":  json.loads(json.dumps(predictions, default=lambda x: x.tolist()))}
