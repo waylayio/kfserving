@@ -32,7 +32,7 @@ setup(
     packages=find_packages("pytorchserver"),
     install_requires=[
         "kfserving>=0.2.2",
-        "torch >= 1.0.0",
+        "torch >= 1.4.0",
         "argparse >= 1.4.0",
         "numpy >= 1.8.2",
         "torchvision >= 0.2.0"
