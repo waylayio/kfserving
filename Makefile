@@ -50,11 +50,6 @@ deploy-dev: manifests
 	kustomize build config/overlays/development | kubectl apply -f -
 	if [ ${KFSERVING_ENABLE_SELF_SIGNED_CA} != false ]; then ./hack/self-signed-ca.sh; fi;
 
-
-deploy-local: manifests
-	./hack/image_patch_dev.sh local
-	kustomize build config/overlays/local | kubectl apply -f -
-
 deploy-dev-sklearn: docker-push-sklearn
 	./hack/model_server_patch_dev.sh sklearn ${KO_DOCKER_REPO}/${SKLEARN_IMG}
 	kustomize build config/overlays/dev-image-config | kubectl apply -f -
