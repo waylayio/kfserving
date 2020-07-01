@@ -14,7 +14,10 @@
 
 import kfserving
 import joblib
+import sklearn
 import numpy as np
+import pandas as pd
+import dill
 import os
 from typing import List, Dict
 
@@ -34,11 +37,19 @@ class SKLearnModel(kfserving.KFModel): #pylint:disable=c-extension-no-member
         paths = [os.path.join(model_path, MODEL_BASENAME + model_extension)
                  for model_extension in MODEL_EXTENSIONS]
         model_file = next(path for path in paths if os.path.exists(path))
-        self._model = joblib.load(model_file) #pylint:disable=attribute-defined-outside-init
+        with open(model_file, 'rb') as f:
+            try:
+                self._model = dill.load(f) #pylint:disable=attribute-defined-outside-init
+            except Exception:
+                self._model = joblib.load(f) #pylint:disable=attribute-defined-outside-init
         self.ready = True
 
     def predict(self, request: Dict) -> Dict:
         instances = request["instances"]
         inputs = np.array(instances)
-        result = self._model.predict(inputs).tolist()
+        proba = request.get("probabilities", False)
+        if proba:
+            result = self._model.predict_proba(inputs).tolist()
+        else:
+            result = self._model.predict(inputs).tolist()
         return { "predictions" : result }
