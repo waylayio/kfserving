@@ -35,6 +35,8 @@ setup(
         "scikit-learn == 0.22.0",
         "argparse >= 1.4.0",
         "numpy >= 1.8.2",
+        "pandas >= 1.0.0",
+        "dill >= 0.3",
         "joblib >= 0.13.0"
     ],
     tests_require=tests_require,
