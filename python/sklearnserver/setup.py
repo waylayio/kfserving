@@ -32,7 +32,7 @@ setup(
     packages=find_packages("sklearnserver"),
     install_requires=[
         "kfserving>=0.3.0",
-        "scikit-learn == 0.22.0",
+        "scikit-learn == 0.24.2",
         "argparse >= 1.4.0",
         "numpy >= 1.8.2",
         "pandas >= 1.0.0",
