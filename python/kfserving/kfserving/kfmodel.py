@@ -77,7 +77,7 @@ class KFModel:
                ("inputs" in request and not isinstance(request["inputs"], list)):
                 raise tornado.web.HTTPError(
                     status_code=HTTPStatus.BAD_REQUEST,
-                    reason="Expected \"instances\" or \"inputs\" to be a list"
+                    log_message="Expected \"instances\" or \"inputs\" to be a list"
                 )
         return request
 
@@ -111,7 +111,7 @@ class KFModel:
                            attributes["content-type"] == "application/json":
                             raise tornado.web.HTTPError(
                                 status_code=HTTPStatus.BAD_REQUEST,
-                                reason="Unrecognized request format: %s" % e
+                                log_message="Unrecognized request format: %s" % e
                             )
         elif isinstance(request, ServeRequest):
             return await request.body()
@@ -156,7 +156,7 @@ class KFModel:
         if response.code != 200:
             raise tornado.web.HTTPError(
                 status_code=response.code,
-                reason=response.body)
+                log_message=response.body)
         return json.loads(response.body)
 
     async def explain(self, request: Dict) -> Dict:
@@ -180,5 +180,5 @@ class KFModel:
         if response.code != 200:
             raise tornado.web.HTTPError(
                 status_code=response.code,
-                reason=response.body)
+                log_message=response.body)
         return json.loads(response.body)
