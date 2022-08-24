@@ -118,10 +118,6 @@ class KFServer:
             # formula as suggest in https://bugs.python.org/issue35279
             self.max_asyncio_workers = min(32, utils.cpu_count()+4)
 
-        logging.info(f"Setting asyncio max_workers as {self.max_asyncio_workers}")
-        asyncio.get_event_loop().set_default_executor(
-            concurrent.futures.ThreadPoolExecutor(max_workers=self.max_asyncio_workers))
-
         self._http_server = tornado.httpserver.HTTPServer(
             self.create_application(), max_buffer_size=self.max_buffer_size)
 
@@ -129,6 +125,10 @@ class KFServer:
         self._http_server.bind(self.http_port)
         logging.info("Will fork %d workers", self.workers)
         self._http_server.start(self.workers)
+
+        logging.info(f"Setting asyncio max_workers as {self.max_asyncio_workers}")
+        asyncio.get_event_loop().set_default_executor(
+            concurrent.futures.ThreadPoolExecutor(max_workers=self.max_asyncio_workers))
 
         # Need to start the IOLoop after workers have been started
         # https://github.com/tornadoweb/tornado/issues/2426
